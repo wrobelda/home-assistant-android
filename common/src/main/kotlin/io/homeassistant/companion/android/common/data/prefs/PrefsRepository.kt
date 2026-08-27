@@ -28,6 +28,38 @@ enum class ScreenOrientation(val storageValue: String, val activityInfo: Int) {
     }
 }
 
+/**
+ * Idle behavior applied while the "Keep screen on" preference is enabled.
+ *
+ * The [storageValue]s match the entries declared in the `pref_keep_screen_on_idle_option_values`
+ * string-array used by the settings ListPreference, so values written by the legacy settings UI
+ * still resolve to a typed enum here.
+ */
+enum class KeepScreenOnIdleMode(val storageValue: String) {
+    /** Keep the screen at its regular brightness while idle. */
+    NONE("none"),
+
+    /** Dim the screen to the system's dim level after a period of inactivity. */
+    DIM("dim"),
+
+    /**
+     * Request the minimum screen brightness, behind a black scrim, after a period of inactivity.
+     * The Android platform has no explicit API allowing apps to turn the display completely off
+     * without having the system enter suspend mode, so `BRIGHTNESS_OVERRIDE_OFF` - defined as
+     * setting the "lowest value" possible - is the best solution available. How dark the screen
+     * ends up depends on the display: OLED panels go fully dark, while LCD backlights keep a
+     * faint glow.
+     */
+    SCREEN_OFF("screen_off"),
+    ;
+
+    companion object {
+        /** Returns the matching entry or [NONE] when [value] is null or unknown. */
+        fun fromStorageValue(value: String?): KeepScreenOnIdleMode =
+            entries.firstOrNull { it.storageValue == value } ?: NONE
+    }
+}
+
 enum class NightModeTheme(val storageValue: String) {
     LIGHT("light"),
     DARK("dark"),
@@ -105,6 +137,17 @@ interface PrefsRepository {
 
     /** Emits the current "Keep screen on" preference immediately on collection, then on every change. */
     suspend fun keepScreenOnFlow(): Flow<Boolean>
+
+    /**
+     * Returns the idle behavior used while "Keep screen on" is enabled. Falls back to
+     * [KeepScreenOnIdleMode.NONE] when no value is stored or the stored value cannot be resolved.
+     */
+    suspend fun getKeepScreenOnIdleMode(): KeepScreenOnIdleMode
+
+    suspend fun setKeepScreenOnIdleMode(mode: KeepScreenOnIdleMode)
+
+    /** Emits the current [KeepScreenOnIdleMode] preference immediately on collection, then on every change. */
+    suspend fun keepScreenOnIdleModeFlow(): Flow<KeepScreenOnIdleMode>
 
     /**
      * Returns the user's current screen orientation preference. Falls back to

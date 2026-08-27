@@ -381,6 +381,12 @@
     <string name="join_our_server">Join our smart home</string>
     <string name="keep_screen_on_def">Do not lock screen when dashboard is active</string>
     <string name="keep_screen_on">Keep screen on</string>
+    <string name="keep_screen_on_idle_title">When idle while keeping screen on</string>
+    <string name="keep_screen_on_idle_option_label_none">Do nothing</string>
+    <string name="keep_screen_on_idle_option_label_dim">Dim the screen</string>
+    <string name="keep_screen_on_idle_option_label_screen_off">Turn the screen brightness to minimum</string>
+    <string name="keep_screen_on_idle_info_title">How dark is minimum?</string>
+    <string name="keep_screen_on_idle_info">The dashboard is always hidden behind a black screen, but how dark the display gets depends on its hardware: OLED screens go fully dark, while LCD backlights keep a faint glow. Android does not let apps switch a screen off while the device stays awake, so minimum brightness is the darkest an app can request.</string>
     <string name="page_zoom_default">%1$d%% (default)</string>
     <string name="page_zoom_pct">%1$d%%</string>
     <string name="page_zoom">Page zoom</string>

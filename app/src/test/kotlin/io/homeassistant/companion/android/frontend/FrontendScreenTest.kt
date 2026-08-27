@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.ActivityInfo
 import android.util.Rational
 import android.view.View
+import android.view.WindowManager
 import android.webkit.PermissionRequest as WebViewPermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
@@ -34,6 +35,7 @@ import dagger.hilt.android.testing.HiltTestApplication
 import io.homeassistant.companion.android.HiltComponentActivity
 import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.data.connectivity.ConnectivityCheckState
+import io.homeassistant.companion.android.common.data.prefs.KeepScreenOnIdleMode
 import io.homeassistant.companion.android.common.data.prefs.ScreenOrientation
 import io.homeassistant.companion.android.common.data.servers.ServerManager
 import io.homeassistant.companion.android.database.settings.SettingsDao
@@ -977,6 +979,93 @@ class FrontendScreenTest {
                 capturedView!!.keepScreenOn,
             )
         }
+    }
+
+    @Test
+    fun `Given SCREEN_OFF idle mode when idle timeout elapses then window brightness is overridden off`() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            FrontendScreenContent(
+                viewState = FrontendViewState.Content(serverId = 1, url = "https://example.com"),
+                getWebViewClient = { WebViewClient() },
+                webChromeClient = WebChromeClient(),
+                frontendJsCallback = FrontendJsBridge.noOp,
+                onBlockInsecureRetry = {},
+                onOpenExternalLink = {},
+                onBlockInsecureHelpClick = {},
+                onOpenSettings = {},
+                onChangeSecurityLevel = {},
+                onOpenLocationSettings = {},
+                onConfigureHomeNetwork = { _ -> },
+                onSecurityLevelHelpClick = {},
+                onShowSnackbar = { _, _ -> true },
+                onWebViewCreationFailed = {},
+                keepScreenOnEnabled = true,
+                keepScreenOnIdleMode = KeepScreenOnIdleMode.SCREEN_OFF,
+            )
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        assertEquals(
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE,
+            composeTestRule.activity.window.attributes.screenBrightness,
+            0f,
+        )
+
+        // The idle delay mirrors the system screen off timeout, which is unset in Robolectric and
+        // falls back to the default of one minute.
+        composeTestRule.mainClock.advanceTimeBy(61_000)
+
+        assertEquals(
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF,
+            composeTestRule.activity.window.attributes.screenBrightness,
+            0f,
+        )
+    }
+
+    @Test
+    fun `Given DIM idle mode when content leaves composition while idle then window brightness is restored`() {
+        composeTestRule.mainClock.autoAdvance = false
+        val visible = mutableStateOf(true)
+        composeTestRule.setContent {
+            if (visible.value) {
+                FrontendScreenContent(
+                    viewState = FrontendViewState.Content(serverId = 1, url = "https://example.com"),
+                    getWebViewClient = { WebViewClient() },
+                    webChromeClient = WebChromeClient(),
+                    frontendJsCallback = FrontendJsBridge.noOp,
+                    onBlockInsecureRetry = {},
+                    onOpenExternalLink = {},
+                    onBlockInsecureHelpClick = {},
+                    onOpenSettings = {},
+                    onChangeSecurityLevel = {},
+                    onOpenLocationSettings = {},
+                    onConfigureHomeNetwork = { _ -> },
+                    onSecurityLevelHelpClick = {},
+                    onShowSnackbar = { _, _ -> true },
+                    onWebViewCreationFailed = {},
+                    keepScreenOnEnabled = true,
+                    keepScreenOnIdleMode = KeepScreenOnIdleMode.DIM,
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeBy(61_000)
+
+        val dimmed = composeTestRule.activity.window.attributes.screenBrightness
+        assertTrue(
+            "window brightness should be lowered to the dim level while idle",
+            dimmed != WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE,
+        )
+
+        visible.value = false
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        assertEquals(
+            "window brightness should be restored once the frontend leaves composition",
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE,
+            composeTestRule.activity.window.attributes.screenBrightness,
+            0f,
+        )
     }
 
     @Test

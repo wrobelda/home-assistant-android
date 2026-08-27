@@ -28,6 +28,7 @@ private const val CONTROLS_PANEL_SERVER = "controls_panel_server"
 private const val CONTROLS_PANEL_PATH = "controls_panel_path"
 private const val PREF_FULLSCREEN_ENABLED = "fullscreen_enabled"
 private const val PREF_KEEP_SCREEN_ON_ENABLED = "keep_screen_on_enabled"
+private const val PREF_KEEP_SCREEN_ON_IDLE_MODE = "keep_screen_on_idle_mode"
 private const val PREF_PAGE_ZOOM_LEVEL = "page_zoom_level"
 private const val PREF_PINCH_TO_ZOOM_ENABLED = "pinch_to_zoom_enabled"
 private const val PREF_AUTOPLAY_VIDEO = "autoplay_video"
@@ -238,6 +239,20 @@ internal class PrefsRepositoryImpl @Inject constructor(
     override suspend fun keepScreenOnFlow(): Flow<Boolean> {
         return localStorage().observeChanges(PREF_KEEP_SCREEN_ON_ENABLED) {
             isKeepScreenOnEnabled()
+        }
+    }
+
+    override suspend fun getKeepScreenOnIdleMode(): KeepScreenOnIdleMode {
+        return KeepScreenOnIdleMode.fromStorageValue(localStorage().getString(PREF_KEEP_SCREEN_ON_IDLE_MODE))
+    }
+
+    override suspend fun setKeepScreenOnIdleMode(mode: KeepScreenOnIdleMode) {
+        localStorage().putString(PREF_KEEP_SCREEN_ON_IDLE_MODE, mode.storageValue)
+    }
+
+    override suspend fun keepScreenOnIdleModeFlow(): Flow<KeepScreenOnIdleMode> {
+        return localStorage().observeChanges(PREF_KEEP_SCREEN_ON_IDLE_MODE) {
+            getKeepScreenOnIdleMode()
         }
     }
 

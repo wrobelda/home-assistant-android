@@ -71,6 +71,7 @@ import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.HAThemeForPreview
 import io.homeassistant.companion.android.common.compose.theme.LocalHAColorScheme
+import io.homeassistant.companion.android.common.data.prefs.KeepScreenOnIdleMode
 import io.homeassistant.companion.android.common.data.prefs.ScreenOrientation
 import io.homeassistant.companion.android.common.util.GestureDirection
 import io.homeassistant.companion.android.frontend.WebViewAction.ApplySafeAreaInsets.Companion.SafeAreaInsets
@@ -152,6 +153,7 @@ internal fun FrontendScreen(
     val autoPlayVideoEnabled by viewModel.autoPlayVideoEnabled.collectAsStateWithLifecycle()
     val screenOrientation by viewModel.screenOrientation.collectAsStateWithLifecycle()
     val keepScreenOnEnabled by viewModel.keepScreenOnEnabled.collectAsStateWithLifecycle()
+    val keepScreenOnIdleMode by viewModel.keepScreenOnIdleMode.collectAsStateWithLifecycle()
     val improvScanRequested by viewModel.improvScanRequested.collectAsStateWithLifecycle()
 
     // The fullscreen View handed over by the WebView is Activity-scoped. Keep it in screen
@@ -212,6 +214,7 @@ internal fun FrontendScreen(
         autoPlayVideoEnabled = autoPlayVideoEnabled,
         screenOrientation = screenOrientation,
         keepScreenOnEnabled = keepScreenOnEnabled,
+        keepScreenOnIdleMode = keepScreenOnIdleMode,
         onPipReadinessChanged = onPipReadinessChanged,
         improvScanRequested = improvScanRequested,
         processImprovScanRequests = viewModel::processImprovScanRequests,
@@ -241,6 +244,7 @@ internal fun FrontendScreenContent(
     autoPlayVideoEnabled: Boolean = false,
     screenOrientation: ScreenOrientation = ScreenOrientation.SYSTEM,
     keepScreenOnEnabled: Boolean = false,
+    keepScreenOnIdleMode: KeepScreenOnIdleMode = KeepScreenOnIdleMode.NONE,
     pendingPermissionRequest: PermissionRequest? = null,
     pendingDialog: FrontendDialog? = null,
     pendingFileChooser: FileChooserRequest? = null,
@@ -294,7 +298,12 @@ internal fun FrontendScreenContent(
 
     FrontendScreenHandlers(pendingPermissionRequest = pendingPermissionRequest, pendingDialog = pendingDialog)
 
-    Box(modifier = modifier.fillMaxSize()) {
+    val keepScreenOnIdleState = rememberKeepScreenOnIdleState(
+        enabled = keepScreenOnEnabled,
+        mode = keepScreenOnIdleMode,
+    )
+
+    Box(modifier = modifier.fillMaxSize().then(keepScreenOnIdleState.inputModifier)) {
         // Always render WebView at base layer
         SafeHAWebView(
             onWebViewCreated = { webView = it },
@@ -342,6 +351,10 @@ internal fun FrontendScreenContent(
             onScanned = onBarcodeScanned,
             onCancelled = onBarcodeCancelled,
         )
+
+        if (keepScreenOnIdleState.showBlackScrim) {
+            Color.Black.Overlay(modifier = Modifier.fillMaxSize())
+        }
     }
 }
 

@@ -60,6 +60,23 @@
             android:title="@string/keep_screen_on"
             android:summary="@string/keep_screen_on_def"/>
         <ListPreference
+            android:key="keep_screen_on_idle"
+            android:dependency="keep_screen_on"
+            android:defaultValue="@string/keep_screen_on_idle_option_array_value_none"
+            android:entries="@array/pref_keep_screen_on_idle_option_labels"
+            android:entryValues="@array/pref_keep_screen_on_idle_option_values"
+            android:icon="@drawable/ic_brightness_medium"
+            android:title="@string/keep_screen_on_idle_title"
+            app:useSimpleSummaryProvider="true"/>
+        <Preference
+            android:key="keep_screen_on_idle_info"
+            android:dependency="keep_screen_on"
+            android:icon="@drawable/ic_info_outline"
+            android:title="@string/keep_screen_on_idle_info_title"
+            android:summary="@string/keep_screen_on_idle_info"
+            android:selectable="false"
+            android:persistent="false"/>
+        <ListPreference
             android:key="page_zoom"
             android:icon="@drawable/ic_zoom_in"
             android:title="@string/page_zoom"

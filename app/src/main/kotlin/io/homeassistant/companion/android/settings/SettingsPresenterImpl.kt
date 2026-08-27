@@ -10,6 +10,7 @@ import io.homeassistant.companion.android.BuildConfig
 import io.homeassistant.companion.android.R
 import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.data.integration.impl.entities.RateLimitResponse
+import io.homeassistant.companion.android.common.data.prefs.KeepScreenOnIdleMode
 import io.homeassistant.companion.android.common.data.prefs.NightModeTheme
 import io.homeassistant.companion.android.common.data.prefs.PrefsRepository
 import io.homeassistant.companion.android.common.data.prefs.ScreenOrientation
@@ -113,6 +114,7 @@ class SettingsPresenterImpl @Inject constructor(
             "languages" -> langsManager.getCurrentLang()
             "page_zoom" -> prefsRepository.getPageZoomLevel().toString()
             "screen_orientation" -> prefsRepository.getScreenOrientation().storageValue
+            "keep_screen_on_idle" -> prefsRepository.getKeepScreenOnIdleMode().storageValue
             else -> throw IllegalArgumentException("No string found by this key: $key")
         }
     }
@@ -124,6 +126,8 @@ class SettingsPresenterImpl @Inject constructor(
                 "languages" -> langsManager.saveLang(value)
                 "page_zoom" -> prefsRepository.setPageZoomLevel(value?.toIntOrNull())
                 "screen_orientation" -> prefsRepository.setScreenOrientation(ScreenOrientation.fromStorageValue(value))
+                "keep_screen_on_idle" ->
+                    prefsRepository.setKeepScreenOnIdleMode(KeepScreenOnIdleMode.fromStorageValue(value))
                 else -> throw IllegalArgumentException("No string found by this key: $key")
             }
         }

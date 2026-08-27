@@ -191,6 +191,31 @@ class PrefsRepositoryImplTest {
                 cancelAndIgnoreRemainingEvents()
             }
         }
+
+        @Test
+        fun `Given collecting flow when keep screen on idle mode changes then typed value is emitted`() = runTest {
+            coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns null
+
+            repository.keepScreenOnIdleModeFlow().test {
+                // Null storage value falls back to NONE
+                assertEquals(KeepScreenOnIdleMode.NONE, awaitItem())
+
+                coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns "dim"
+                keyChangesFlow.emit("keep_screen_on_idle_mode")
+                assertEquals(KeepScreenOnIdleMode.DIM, awaitItem())
+
+                coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns "screen_off"
+                keyChangesFlow.emit("keep_screen_on_idle_mode")
+                assertEquals(KeepScreenOnIdleMode.SCREEN_OFF, awaitItem())
+
+                // Unknown value falls back to NONE
+                coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns "garbage"
+                keyChangesFlow.emit("keep_screen_on_idle_mode")
+                assertEquals(KeepScreenOnIdleMode.NONE, awaitItem())
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
     }
 
     @Nested
@@ -244,6 +269,60 @@ class PrefsRepositoryImplTest {
             repository.setScreenOrientation(orientation)
 
             coVerify { localStorage.putString("screen_orientation", expectedStored) }
+        }
+    }
+
+    @Nested
+    inner class GetKeepScreenOnIdleMode {
+
+        @Test
+        fun `Given null storage value when get then returns NONE`() = runTest {
+            coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns null
+
+            assertEquals(KeepScreenOnIdleMode.NONE, repository.getKeepScreenOnIdleMode())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "none, NONE",
+            "dim, DIM",
+            "screen_off, SCREEN_OFF",
+        )
+        fun `Given storage value when get then returns matching enum`(
+            storedValue: String,
+            expected: KeepScreenOnIdleMode,
+        ) = runTest {
+            coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns storedValue
+
+            assertEquals(expected, repository.getKeepScreenOnIdleMode())
+        }
+
+        @Test
+        fun `Given unknown storage value when get then returns NONE`() = runTest {
+            coEvery { localStorage.getString("keep_screen_on_idle_mode") } returns "unknown-value"
+
+            assertEquals(KeepScreenOnIdleMode.NONE, repository.getKeepScreenOnIdleMode())
+        }
+    }
+
+    @Nested
+    inner class SaveKeepScreenOnIdleMode {
+
+        @ParameterizedTest
+        @CsvSource(
+            "NONE, none",
+            "DIM, dim",
+            "SCREEN_OFF, screen_off",
+        )
+        fun `Given enum when save then storage value is the storageValue string`(
+            mode: KeepScreenOnIdleMode,
+            expectedStored: String,
+        ) = runTest {
+            coEvery { localStorage.putString(any(), any()) } returns Unit
+
+            repository.setKeepScreenOnIdleMode(mode)
+
+            coVerify { localStorage.putString("keep_screen_on_idle_mode", expectedStored) }
         }
     }
 

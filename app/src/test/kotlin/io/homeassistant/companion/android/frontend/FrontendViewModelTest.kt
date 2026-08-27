@@ -19,6 +19,7 @@ import io.homeassistant.companion.android.common.data.connectivity.ConnectivityC
 import io.homeassistant.companion.android.common.data.connectivity.ConnectivityCheckState
 import io.homeassistant.companion.android.common.data.integration.IntegrationRepository
 import io.homeassistant.companion.android.common.data.keychain.KeyChainRepository
+import io.homeassistant.companion.android.common.data.prefs.KeepScreenOnIdleMode
 import io.homeassistant.companion.android.common.data.prefs.PrefsRepository
 import io.homeassistant.companion.android.common.data.prefs.ScreenOrientation
 import io.homeassistant.companion.android.common.data.prefs.ZoomSettings
@@ -117,11 +118,13 @@ class FrontendViewModelTest {
     private val autoPlayVideoFlow = MutableStateFlow(false)
     private val screenOrientationFlow = MutableStateFlow(ScreenOrientation.SYSTEM)
     private val keepScreenOnFlow = MutableStateFlow(false)
+    private val keepScreenOnIdleModeFlow = MutableStateFlow(KeepScreenOnIdleMode.NONE)
     private val prefsRepository: PrefsRepository = mockk(relaxed = true) {
         coEvery { this@mockk.zoomSettingsFlow() } returns this@FrontendViewModelTest.zoomSettingsFlow
         coEvery { this@mockk.autoPlayVideoFlow() } returns this@FrontendViewModelTest.autoPlayVideoFlow
         coEvery { this@mockk.screenOrientationFlow() } returns this@FrontendViewModelTest.screenOrientationFlow
         coEvery { this@mockk.keepScreenOnFlow() } returns this@FrontendViewModelTest.keepScreenOnFlow
+        coEvery { this@mockk.keepScreenOnIdleModeFlow() } returns this@FrontendViewModelTest.keepScreenOnIdleModeFlow
     }
 
     private val serverId = 1
@@ -2659,6 +2662,33 @@ class FrontendViewModelTest {
             advanceUntilIdle()
 
             assertEquals(value, viewModel.keepScreenOnEnabled.value)
+        }
+    }
+
+    @Nested
+    inner class KeepScreenOnIdleModeSetting {
+
+        @Test
+        fun `Given pref flow emits new value when collected then exposed StateFlow reflects it`() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(KeepScreenOnIdleMode.NONE, viewModel.keepScreenOnIdleMode.value)
+
+            keepScreenOnIdleModeFlow.value = KeepScreenOnIdleMode.DIM
+            advanceUntilIdle()
+
+            assertEquals(KeepScreenOnIdleMode.DIM, viewModel.keepScreenOnIdleMode.value)
+        }
+
+        @Test
+        fun `Given pref flow seeded with screen off when ViewModel constructed then exposed StateFlow has screen off`() = runTest {
+            keepScreenOnIdleModeFlow.value = KeepScreenOnIdleMode.SCREEN_OFF
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(KeepScreenOnIdleMode.SCREEN_OFF, viewModel.keepScreenOnIdleMode.value)
         }
     }
 

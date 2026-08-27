@@ -15,6 +15,7 @@ import io.homeassistant.companion.android.common.R as commonR
 import io.homeassistant.companion.android.common.data.connectivity.ConnectivityCheckRepository
 import io.homeassistant.companion.android.common.data.connectivity.ConnectivityCheckState
 import io.homeassistant.companion.android.common.data.keychain.KeyChainRepository
+import io.homeassistant.companion.android.common.data.prefs.KeepScreenOnIdleMode
 import io.homeassistant.companion.android.common.data.prefs.PrefsRepository
 import io.homeassistant.companion.android.common.data.prefs.ScreenOrientation
 import io.homeassistant.companion.android.common.data.servers.ServerManager
@@ -366,6 +367,18 @@ internal class FrontendViewModel @VisibleForTesting constructor(
     val keepScreenOnEnabled: StateFlow<Boolean> = flow {
         emitAll(prefsRepository.keepScreenOnFlow())
     }.stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = false)
+
+    /**
+     * The user's "When idle while keeping screen on" preference.
+     *
+     * Applied by the screen, together with [keepScreenOnEnabled], to lower the window brightness
+     * after a period of inactivity while the dashboard stays running. Exposed as a [StateFlow] so
+     * the screen can read the current value synchronously when first attaching and react to
+     * subsequent changes.
+     */
+    val keepScreenOnIdleMode: StateFlow<KeepScreenOnIdleMode> = flow {
+        emitAll(prefsRepository.keepScreenOnIdleModeFlow())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = KeepScreenOnIdleMode.NONE)
 
     /**
      * Whether the frontend currently wants the Improv BLE scan running. Observed by
